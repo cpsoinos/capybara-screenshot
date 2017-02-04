@@ -54,45 +54,98 @@ describe Capybara::Screenshot::RSpec::TextReporter do
     end
   end
 
-  context 'when there is no screenshot' do
-    let(:example) { example_failed_method_argument_double }
+  context 'when saving to file system' do
 
-    it 'doesnt change the original output of the reporter' do
-      @reporter.send(example_failed_method, example)
-      expect(@reporter.output.string).to eql("original failure info\n")
-    end
-  end
+    context 'when there is no screenshot' do
+      let(:example) { example_failed_method_argument_double }
 
-  context 'when a html file was saved' do
-    let(:example) { example_failed_method_argument_double(screenshot: { html: "path/to/html" }) }
-
-    it 'appends the html file path to the original output' do
-      @reporter.send(example_failed_method, example)
-      expect(@reporter.output.string).to eql("original failure info\n  #{CapybaraScreenshot::Helpers.yellow("HTML screenshot: file://path/to/html")}\n")
-    end
-  end
-
-  context 'when a html file and an image were saved' do
-    let(:example) { example_failed_method_argument_double(screenshot: { html: "path/to/html", image: "path/to/image" }) }
-
-    it 'appends the image path to the original output' do
-      @reporter.send(example_failed_method, example)
-      expect(@reporter.output.string).to eql("original failure info\n  #{CapybaraScreenshot::Helpers.yellow("HTML screenshot: file://path/to/html")}\n  #{CapybaraScreenshot::Helpers.yellow("Image screenshot: file://path/to/image")}\n")
-    end
-  end
-
-
-  it 'works with older RSpec formatters where `#red` is used instead of `#failure_color`' do
-    old_reporter_class = Class.new(@reporter_class) do
-      undef_method :failure_color
-      def red(str)
-        "red(#{str})"
+      it 'doesnt change the original output of the reporter' do
+        @reporter.send(example_failed_method, example)
+        expect(@reporter.output.string).to eql("original failure info\n")
       end
     end
-    old_reporter = old_reporter_class.new
-    old_reporter.singleton_class.send :include, described_class
-    example = example_failed_method_argument_double(screenshot: { html: "path/to/html" })
-    old_reporter.send(example_failed_method, example)
-    expect(old_reporter.output.string).to eql("original failure info\n  #{CapybaraScreenshot::Helpers.yellow("HTML screenshot: file://path/to/html")}\n")
+
+    context 'when a html file was saved' do
+      let(:example) { example_failed_method_argument_double(screenshot: { html: "path/to/html" }) }
+
+      it 'appends the html file path to the original output' do
+        @reporter.send(example_failed_method, example)
+        expect(@reporter.output.string).to eql("original failure info\n  #{CapybaraScreenshot::Helpers.yellow("HTML screenshot: file://path/to/html")}\n")
+      end
+    end
+
+    context 'when a html file and an image were saved' do
+      let(:example) { example_failed_method_argument_double(screenshot: { html: "path/to/html", image: "path/to/image" }) }
+
+      it 'appends the image path to the original output' do
+        @reporter.send(example_failed_method, example)
+        expect(@reporter.output.string).to eql("original failure info\n  #{CapybaraScreenshot::Helpers.yellow("HTML screenshot: file://path/to/html")}\n  #{CapybaraScreenshot::Helpers.yellow("Image screenshot: file://path/to/image")}\n")
+      end
+    end
+
+    it 'works with older RSpec formatters where `#red` is used instead of `#failure_color`' do
+      old_reporter_class = Class.new(@reporter_class) do
+        undef_method :failure_color
+        def red(str)
+          "red(#{str})"
+        end
+      end
+      old_reporter = old_reporter_class.new
+      old_reporter.singleton_class.send :include, described_class
+      example = example_failed_method_argument_double(screenshot: { html: "path/to/html" })
+      old_reporter.send(example_failed_method, example)
+      expect(old_reporter.output.string).to eql("original failure info\n  #{CapybaraScreenshot::Helpers.yellow("HTML screenshot: file://path/to/html")}\n")
+    end
+
   end
+
+  context 'when saving to s3' do
+
+    before do
+      Capybara::Screenshot.s3_configuration = { bucket_name: "sample-bucket" }
+    end
+
+    context 'when there is no screenshot' do
+      let(:example) { example_failed_method_argument_double }
+
+      it 'doesnt change the original output of the reporter' do
+        @reporter.send(example_failed_method, example)
+        expect(@reporter.output.string).to eql("original failure info\n")
+      end
+    end
+
+    context 'when a html file was saved' do
+      let(:example) { example_failed_method_argument_double(screenshot: { html: "path/to/html" }) }
+
+      it 'appends the html file path to the original output' do
+        @reporter.send(example_failed_method, example)
+        expect(@reporter.output.string).to eql("original failure info\n  #{CapybaraScreenshot::Helpers.yellow("HTML screenshot: https://sample-bucket.s3.amazonaws.com/path/to/html")}\n")
+      end
+    end
+
+    context 'when a html file and an image were saved' do
+      let(:example) { example_failed_method_argument_double(screenshot: { html: "path/to/html", image: "path/to/image" }) }
+
+      it 'appends the image path to the original output' do
+        @reporter.send(example_failed_method, example)
+        expect(@reporter.output.string).to eql("original failure info\n  #{CapybaraScreenshot::Helpers.yellow("HTML screenshot: https://sample-bucket.s3.amazonaws.com/path/to/html")}\n  #{CapybaraScreenshot::Helpers.yellow("Image screenshot: https://sample-bucket.s3.amazonaws.com/path/to/image")}\n")
+      end
+    end
+
+    it 'works with older RSpec formatters where `#red` is used instead of `#failure_color`' do
+      old_reporter_class = Class.new(@reporter_class) do
+        undef_method :failure_color
+        def red(str)
+          "red(#{str})"
+        end
+      end
+      old_reporter = old_reporter_class.new
+      old_reporter.singleton_class.send :include, described_class
+      example = example_failed_method_argument_double(screenshot: { html: "path/to/html" })
+      old_reporter.send(example_failed_method, example)
+      expect(old_reporter.output.string).to eql("original failure info\n  #{CapybaraScreenshot::Helpers.yellow("HTML screenshot: https://sample-bucket.s3.amazonaws.com/path/to/html")}\n")
+    end
+
+  end
+
 end
