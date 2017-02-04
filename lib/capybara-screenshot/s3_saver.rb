@@ -59,6 +59,15 @@ module Capybara
         yield(saver.html_path) if block_given? && saver.html_saved?
         yield(saver.screenshot_path) if block_given? && saver.screenshot_saved?
       end
+
+      def html_path
+        "https://#{Capybara::Screenshot.s3_configuration[:bucket_name]}.s3.amazonaws.com/#{file_base_name}.html"
+      end
+
+      def screenshot_path
+        "https://#{Capybara::Screenshot.s3_configuration[:bucket_name]}.s3.amazonaws.com/#{file_base_name}.png"
+      end
+
     end
   end
 end

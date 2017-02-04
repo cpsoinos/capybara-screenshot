@@ -27,22 +27,13 @@ module Capybara
 
         def output_screenshot_info(example)
           return unless (screenshot = example.metadata[:screenshot])
-          output.puts(long_padding + CapybaraScreenshot::Helpers.yellow("HTML screenshot: #{file_directory}#{screenshot[:html]}")) if screenshot[:html]
-          output.puts(long_padding + CapybaraScreenshot::Helpers.yellow("Image screenshot: #{file_directory}#{screenshot[:image]}")) if screenshot[:image]
+          output.puts(long_padding + CapybaraScreenshot::Helpers.yellow("HTML screenshot: file://#{screenshot[:html]}")) if screenshot[:html]
+          output.puts(long_padding + CapybaraScreenshot::Helpers.yellow("Image screenshot: file://#{screenshot[:image]}")) if screenshot[:image]
         end
 
         def long_padding
           "  "
         end
-
-        def file_directory
-          if Capybara::Screenshot.s3_configuration.length > 0
-            "https://#{Capybara::Screenshot.s3_configuration[:bucket_name]}.s3.amazonaws.com/"
-          else
-            "file://"
-          end
-        end
-
       end
     end
   end
